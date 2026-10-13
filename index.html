@@ -3,10 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#B3141E">
+<meta name="theme-color" content="#F81B35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="IMAASH HR">
 <title>IMAASH HR Staf</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Questrial&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -242,7 +245,7 @@ function vAuth(){
     '<div class="'+(S.msgOk?"ok":"err")+'" id="a-msg">'+esc(S.msg)+'</div>'+
     '<button class="btn pri" data-act="'+(up?"signup":"signin")+'">'+(up?l.signUp:l.signIn)+'</button>'+
     '<button class="btn ghost" data-act="mode">'+(up?l.haveAcc:l.noAcc)+'</button>'+(up?'':'<button class="btn ghost" data-act="forgot">'+l.forgot+'</button>');}
-  return '<div class="auth"><header class="hdr"><div class="row"><div><div class="co">IMAASH Bersatu Enterprise</div><h1>IMAASH HR</h1></div><div class="sp"></div>'+langBtns()+'</div></header><main><section class="card">'+body+'</section><p class="sub" style="text-align:center">'+l.install+'</p></main></div>';}
+  return '<div class="auth"><header class="hdr"><div class="row"><div><div class="co">IMAASH Bersatu Enterprise</div><h1>IMAASH HR</h1></div><div class="sp"></div>'+langBtns()+'</div></header><main><section class="card">'+body+'</section>'+appLink()+'<p class="sub" style="text-align:center">'+l.install+'</p></main></div>';}
 
 function balCards(){var l=L(),yr=today().slice(0,4);
   return '<div class="bal">'+types().filter(function(x){return x.paid&&(["AL","MC","HL"].indexOf(x.id)>=0||taken(x.id,yr)>0);}).map(function(x){var en=entitle(x.id),u=taken(x.id,yr);
@@ -280,7 +283,13 @@ function vMe(){var l=L(),e=S.D.emp;
   function row(a,b){return b?'<div><span class="sub">'+a+'</span><span>'+esc(b)+'</span></div>':'';}
   return '<section class="card lift"><div class="kv">'+row(l.name,e.name)+row(l.no,e.no)+row(l.pos,e.position)+row(l.joined,dfmt(e.joined))+row(l.ic,e.ic)+row(l.email,e.email)+row(l.phone,e.phone)+row(l.address,e.address)+'</div></section>'+
   '<section class="card"><div class="kv">'+row(l.bank,e.bank)+row(l.acct,e.acct)+row(l.epfNo,e.epfNo)+row(l.socsoNo,e.socsoNo)+'</div><p class="sub">'+l.profNote+'</p></section>'+
-  '<button class="btn" data-act="refresh">'+l.refresh+'</button><button class="btn" data-act="signout">'+l.signOut+'</button>';}
+  appLink()+'<button class="btn" data-act="refresh">'+l.refresh+'</button><button class="btn" data-act="signout">'+l.signOut+'</button>';}
+// Offer the Android app on Android phones, except when already running inside it.
+function inApp(){try{return document.referrer.indexOf("android-app://")===0||matchMedia("(display-mode: standalone)").matches||sessionStorage.getItem("hr-in-app")==="1";}catch(e){return false;}}
+function appLink(){if(!/Android/i.test(navigator.userAgent)||inApp())return "";var ms=S.lang==="ms";
+  return '<a class="btn" href="/download/IMAASH-HR.apk" download style="display:block;text-align:center;text-decoration:none;margin:12px 0">⬇ '+(ms?"Muat turun aplikasi Android":"Download the Android app")+'</a>';}
+try{if(document.referrer.indexOf("android-app://")===0)sessionStorage.setItem("hr-in-app","1");}catch(e){}
+if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});
 
 /* ---------- sheets ---------- */
 var sheet=null;
