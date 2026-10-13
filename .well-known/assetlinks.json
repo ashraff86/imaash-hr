@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "my.sentuhanhyder.hr",
+      "sha256_cert_fingerprints": [
+        "2B:7A:A9:3C:7B:95:7A:89:8C:FF:56:1A:08:8D:CB:8B:51:55:4E:72:B1:BA:6D:06:25:D2:2D:15:C5:0D:F9:C8"
+      ]
+    }
+  }
+]
