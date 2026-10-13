@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#B3141E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IMAASH HR">
+<title>IMAASH HR Staf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Questrial&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: phone-first staff portal. Red header with greeting, content cards, fixed bottom tab bar (Home, Leave, Claims, Payslips, Profile). Same palette as the owner app. */
+:root{
+  color-scheme:light;
+  --bg:#F4F4F6;--surface:#FFFFFF;--ink:#1E1F26;--muted:#5E6170;--line:#E3E3E9;
+  --accent:#B3141E;--accent-dark:#7E0D14;--accent-soft:#FBE7E8;
+  --good:#11845B;--good-soft:#DDF4EA;--warn:#8C5A00;--warn-soft:#FFF1CC;--info:#2457C5;--info-soft:#E4ECFC;
+  --f:"Century Gothic","CenturyGothic","AppleGothic","Questrial","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f);font-weight:500;-webkit-text-size-adjust:100%}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+button{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+.hdr{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;padding:calc(18px + env(safe-area-inset-top,0px)) 18px 22px}
+.hdr .row{display:flex;align-items:center;gap:10px;max-width:640px;margin:0 auto}
+.hdr .co{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.hdr h1{font-size:21px;margin-top:2px}
+.hdr .sp{flex:1}
+.lang{display:inline-flex;border:1px solid rgba(255,255,255,.4);border-radius:99px;overflow:hidden}
+.lang button{border:0;background:none;color:#fff;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.lang button[aria-pressed="true"]{background:#fff;color:var(--accent)}
+main{max-width:640px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lift{margin-top:-30px}
+.sub{color:var(--muted);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 16px;font-weight:700;font-size:14.5px;cursor:pointer;text-align:center}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:8px}
+.btn.ghost{border:0;background:none;color:var(--accent);padding:4px 0}
+.btn:disabled{opacity:.55}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qa{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;cursor:pointer;text-align:left}
+.qa .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.qa b{font-size:14.5px}
+.bal{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.bx{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.bx span{font-size:12px;color:var(--muted);font-weight:700}
+.bx b{display:block;font-size:22px}
+.bx i{font-style:normal;font-size:12px;color:var(--muted)}
+.meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);min-width:0}
+.li:last-child{border-bottom:0}
+.li .grow{flex:1;min-width:0}
+.li .t{font-weight:700}
+.li .s{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.li .amt{font-weight:700;white-space:nowrap}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-pending{background:var(--warn-soft);color:var(--warn)}
+.p-approved{background:var(--good-soft);color:var(--good)}
+.p-paid{background:var(--info-soft);color:var(--info)}
+.p-rejected{background:var(--accent-soft);color:var(--accent)}
+.p-cancelled{background:#ECECF1;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label{font-size:12.5px;color:var(--muted);font-weight:700}
+.f input,.f select,.f textarea{font:16px var(--f);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+.f textarea{min-height:80px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent);outline:none}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.err{color:var(--accent);font-size:13.5px;min-height:1.2em}
+.ok{color:var(--good);font-size:13.5px}
+.info{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.kv{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.kv div{display:flex;justify-content:space-between;gap:12px}
+.kv div span:last-child{text-align:right;overflow-wrap:anywhere}
+.kv .tot{border-top:1px solid var(--line);padding-top:6px;font-weight:700}
+.sec{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;border-bottom:1px solid var(--line);padding-bottom:5px}
+.netbox{background:var(--accent-soft);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.netbox b{font-size:22px;color:var(--accent)}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+nav.tabs .in{display:flex;width:100%;max-width:640px}
+nav.tabs button{flex:1;border:0;background:none;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;position:relative}
+nav.tabs button[aria-current="page"]{color:var(--accent)}
+nav.tabs .dot{position:absolute;top:6px;left:calc(50% + 8px);background:var(--accent);color:#fff;border-radius:99px;font-size:10px;padding:0 5px}
+
+.sheet{position:fixed;inset:0;background:rgba(20,20,30,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet .box{background:var(--surface);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.sheet .hd{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .hd h3{font-size:18px}
+.x{border:0;background:none;font-size:26px;line-height:1;color:var(--muted);cursor:pointer}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+
+.auth{min-height:100vh;display:flex;flex-direction:column}
+.auth .hdr{padding-bottom:60px}
+.auth main{margin-top:-44px;padding-bottom:30px}
+.loading{padding:40px 16px;text-align:center;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">IMAASH HR…</div></div>
+
+<script>
+"use strict";
+var SB_URL="https://sfxwxuelqyuiepluhpdu.supabase.co",SB_KEY="sb_publishable_Qe9ZIzv9KzUDy3zilCE0EQ_Vfbf6DuU";
+var T={
+ms:{home:"Utama",leave:"Cuti",claim:"Tuntutan",pay:"Slip Gaji",me:"Profil",
+ hello:["Selamat pagi","Selamat tengah hari","Selamat petang","Selamat malam"],
+ applyLeave:"Mohon cuti",newClaim:"Buat tuntutan",payslips:"Slip gaji",balance:"Baki cuti {y}",left:"baki",of:"daripada",
+ latestSlip:"Slip gaji terkini",myReq:"Permohonan saya",seeAll:"Lihat semua",none:"Tiada rekod.",
+ type:"Jenis",from:"Dari",to:"Hingga",half:"Separuh hari",reason:"Sebab",days:"hari",workDays:"{n} hari bekerja",submit:"Hantar",cancel:"Batal",withdraw:"Tarik balik",tapAgain:"Tekan lagi untuk tarik balik",
+ date:"Tarikh resit",amt:"Amaun (RM)",desc:"Keterangan (contoh: tol Kuah ke Padang Matsirat)",
+ pending:"Menunggu",approved:"Diluluskan",rejected:"Ditolak",paid:"Dibayar",cancelled:"Ditarik balik",all:"Semua",
+ sent:"Permohonan dihantar. Ashraff akan meluluskannya.",withdrawn:"Ditarik balik",
+ net:"Gaji bersih",gross:"Gaji kasar",earn:"Pendapatan",deduct:"Potongan",empContrib:"Caruman majikan",ded:"Jumlah potongan",basic:"Gaji pokok",ot:"Kerja lebih masa",bonus:"Bonus",allow:"Elaun",claims:"Tuntutan",adv:"Pendahuluan gaji",pcb:"PCB",epf:"KWSP",socso:"PERKESO",skbbk:"SKBBK",eis:"SIP",other:"Potongan lain",unpaid:"Cuti tanpa gaji",arrears:"Tunggakan",comm:"Komisen",
+ pdf:"Muat turun PDF",close:"Tutup",year:"Tahun",
+ name:"Nama",no:"No. pekerja",pos:"Jawatan",joined:"Tarikh mula",ic:"No. K/P",email:"E-mel",phone:"Telefon",bank:"Bank",acct:"No. akaun",epfNo:"No. KWSP",socsoNo:"No. PERKESO",address:"Alamat",
+ profNote:"Jika ada maklumat yang salah, beritahu Ashraff untuk dikemas kini.",signOut:"Log keluar",
+ signIn:"Log masuk",signUp:"Daftar akaun",pw:"Kata laluan",pw2:"Kata laluan baharu (sekurang-kurangnya 8 aksara)",forgot:"Lupa kata laluan?",
+ authP:"Guna e-mel yang anda berikan kepada syarikat.",haveAcc:"Sudah ada akaun? Log masuk",noAcc:"Kali pertama? Daftar akaun",
+ checkMail:"Semak e-mel anda dan tekan pautan pengesahan, kemudian kembali ke sini untuk log masuk.",
+ resetSent:"Pautan tetapan semula telah dihantar ke e-mel anda.",newPw:"Tetapkan kata laluan baharu",savePw:"Simpan kata laluan",pwSaved:"Kata laluan dikemas kini.",
+ notStaff:"Akaun ini tidak dipadankan dengan mana-mana pekerja. Pastikan anda log masuk dengan e-mel yang didaftarkan oleh syarikat, atau minta Ashraff semak e-mel anda dalam sistem HR.",
+ wrongPw:"E-mel atau kata laluan salah.",notConf:"Sahkan e-mel anda dahulu (semak peti masuk, termasuk Spam).",net0:"Tiada sambungan internet.",
+ req:"Isi semua medan yang diperlukan.",badDays:"Tiada hari bekerja dalam tarikh ini.",overBal:"Melebihi baki cuti anda ({n} hari).",
+ unlimited:"Tiada had",slipNote:"Slip gaji ini dijana oleh komputer dan tidak memerlukan tandatangan.",wk:["Ahd","Isn","Sel","Rab","Kha","Jum","Sab"],
+ ctypes:{travel:"Perjalanan & batu",meal:"Makan",med:"Perubatan",toll:"Tol & letak kereta",material:"Bahan & bekalan",phone:"Telefon",other:"Lain-lain"},
+ refresh:"Muat semula",install:"Tip: tekan Kongsi / ⋮ kemudian \"Tambah ke Skrin Utama\" untuk buka seperti aplikasi."},
+en:{home:"Home",leave:"Leave",claim:"Claims",pay:"Payslips",me:"Profile",
+ hello:["Good morning","Good afternoon","Good afternoon","Good evening"],
+ applyLeave:"Apply for leave",newClaim:"New claim",payslips:"Payslips",balance:"Leave balance {y}",left:"left",of:"of",
+ latestSlip:"Latest payslip",myReq:"My requests",seeAll:"See all",none:"No records.",
+ type:"Type",from:"From",to:"To",half:"Half day",reason:"Reason",days:"days",workDays:"{n} working days",submit:"Submit",cancel:"Cancel",withdraw:"Withdraw",tapAgain:"Tap again to withdraw",
+ date:"Receipt date",amt:"Amount (RM)",desc:"Description (e.g. toll Kuah to Padang Matsirat)",
+ pending:"Pending",approved:"Approved",rejected:"Rejected",paid:"Paid",cancelled:"Withdrawn",all:"All",
+ sent:"Request sent. Ashraff will review it.",withdrawn:"Withdrawn",
+ net:"Net pay",gross:"Gross pay",earn:"Earnings",deduct:"Deductions",empContrib:"Employer contributions",ded:"Total deductions",basic:"Basic salary",ot:"Overtime",bonus:"Bonus",allow:"Allowance",claims:"Claims",adv:"Advance salary",pcb:"PCB",epf:"EPF",socso:"SOCSO",skbbk:"SKBBK",eis:"EIS",other:"Other deductions",unpaid:"Unpaid leave",arrears:"Arrears",comm:"Commission",
+ pdf:"Download PDF",close:"Close",year:"Year",
+ name:"Name",no:"Employee no.",pos:"Position",joined:"Join date",ic:"IC no.",email:"Email",phone:"Phone",bank:"Bank",acct:"Account no.",epfNo:"EPF no.",socsoNo:"SOCSO no.",address:"Address",
+ profNote:"If anything here is wrong, tell Ashraff so it can be updated.",signOut:"Sign out",
+ signIn:"Sign in",signUp:"Create account",pw:"Password",pw2:"New password (at least 8 characters)",forgot:"Forgot password?",
+ authP:"Use the email address you gave the company.",haveAcc:"Already have an account? Sign in",noAcc:"First time? Create an account",
+ checkMail:"Check your email and tap the confirmation link, then come back here to sign in.",
+ resetSent:"A reset link has been sent to your email.",newPw:"Set a new password",savePw:"Save password",pwSaved:"Password updated.",
+ notStaff:"This account isn't matched to an employee. Make sure you sign in with the email the company has on file, or ask Ashraff to check your email in the HR system.",
+ wrongPw:"Wrong email or password.",notConf:"Confirm your email first (check your inbox, including Spam).",net0:"No internet connection.",
+ req:"Fill in all required fields.",badDays:"There are no working days in these dates.",overBal:"More than your leave balance ({n} days).",
+ unlimited:"No limit",slipNote:"This payslip is computer generated and needs no signature.",wk:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+ ctypes:{travel:"Travel & mileage",meal:"Meals",med:"Medical",toll:"Toll & parking",material:"Materials & supplies",phone:"Phone",other:"Other"},
+ refresh:"Refresh",install:"Tip: tap Share / ⋮ then \"Add to Home Screen\" to open it like an app."}};
+var MON={ms:["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogo","Sep","Okt","Nov","Dis"],en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]};
+var MONL={ms:["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"],en:["January","February","March","April","May","June","July","August","September","October","November","December"]};
+var LT_DEF=[{id:"AL",ms:"Cuti Tahunan",en:"Annual Leave",days:8,paid:true,act:true},{id:"MC",ms:"Cuti Sakit",en:"Medical Leave",days:14,paid:true,act:true},{id:"HL",ms:"Cuti Hospitalisasi",en:"Hospitalisation Leave",days:60,paid:true},{id:"CL",ms:"Cuti Ihsan",en:"Compassionate Leave",days:3,paid:true},{id:"PL",ms:"Cuti Paterniti",en:"Paternity Leave",days:7,paid:true},{id:"ML",ms:"Cuti Bersalin",en:"Maternity Leave",days:98,paid:true},{id:"UL",ms:"Cuti Tanpa Gaji",en:"Unpaid Leave",days:0,paid:false}];
+
+var S={lang:"ms",tab:"home",view:"loading",authMode:"in",lf:"all",py:null,D:null,msg:"",msgOk:false};
+try{var sv=JSON.parse(localStorage.getItem("hrs-ui")||"{}");if(sv.lang)S.lang=sv.lang;}catch(e){}
+var cli=null;
+function L(){return T[S.lang];}
+function fmt(s,o){return s.replace(/\{(\w+)\}/g,function(_,k){return o[k];});}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function rm(n){return "RM "+(Number(n)||0).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function N(x){return Number(x)||0;}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function today(){return iso(new Date());}
+function pd(s){var p=String(s).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function dfmt(s){if(!s)return "";var d=pd(s);return d.getDate()+" "+MON[S.lang][d.getMonth()]+" "+d.getFullYear();}
+function mlabel(m){var p=m.split("-");return MONL[S.lang][+p[1]-1]+" "+p[0];}
+function toast(m){var x=document.createElement("div");x.className="toast";x.textContent=m;document.body.appendChild(x);setTimeout(function(){x.remove();},2600);}
+
+/* ---------- data helpers ---------- */
+function meta(){return (S.D&&S.D.meta)||{};}
+function types(){var lt=meta().leaveTypes;return (lt&&lt.length)?lt:LT_DEF;}
+function ltype(id){return types().find(function(x){return x.id===id;})||{id:id,ms:id,en:id,days:0};}
+function isOff(d){var s=iso(d);if((meta().weekend||[5,6]).indexOf(d.getDay())>=0)return true;return (meta().holidays||[]).some(function(h){return h.date===s;});}
+function workDays(f,t,half){if(!f||!t||t<f)return 0;var n=0,d=pd(f),e=pd(t);while(d<=e){if(!isOff(d))n++;d.setDate(d.getDate()+1);}return half&&f===t&&n?0.5:n;}
+function years(e){if(!e.joined)return 0;var j=pd(e.joined),n=new Date(),y=n.getFullYear()-j.getFullYear();if(n<new Date(n.getFullYear(),j.getMonth(),j.getDate()))y--;return Math.max(0,y);}
+function entitle(tid){var e=S.D.emp;if(e.ent&&e.ent[tid]!=null&&e.ent[tid]!=="")return Number(e.ent[tid]);var lt=ltype(tid),y=years(e);
+  if(tid==="AL")return y>=5?16:y>=2?12:lt.days;if(tid==="MC")return y>=5?22:y>=2?18:lt.days;return lt.days;}
+function taken(tid,yr,st){return S.D.leave.filter(function(l){return l.type===tid&&String(l.from).slice(0,4)===String(yr)&&l.status===(st||"approved");}).reduce(function(a,l){return a+N(l.days);},0);}
+function pill(st){return '<span class="pill p-'+esc(st)+'">'+esc(L()[st]||st)+'</span>';}
+function itemName(k){var l=L();return {"Overtime":l.ot,"Bonus":l.bonus,"Claim":l.claims,"Advance Salary":l.adv,"Arrears":l.arrears,"Commissions (not paid monthly)":l.comm}[k]||k;}
+function slipNorm(s){
+  s=JSON.parse(JSON.stringify(s));
+  if(s.items&&s.bonus===undefined){s.bonus=s.items.Bonus||0;s.allow=N(s.allow)-s.bonus;}
+  if(s.dedItems&&s.adv===undefined){s.adv=s.dedItems["Advance Salary"]||0;s.other=N(s.other)-s.adv;}
+  ["basic","allow","bonus","ot","claims","unpaidDays","unpaidAmt","epfEe","socsoEe","skbbkEe","eisEe","pcb","adv","other","epfEr","socsoEr","eisEr","hrdf","gross","ded","net"].forEach(function(k){s[k]=N(s[k]);});return s;}
+function earnRows(s){var l=L(),r=[[l.basic,s.basic]];
+  if(s.items)Object.keys(s.items).forEach(function(k){if(k!=="Claim")r.push([itemName(k),s.items[k]]);});
+  else{if(s.ot)r.push([l.ot,s.ot]);if(s.bonus)r.push([l.bonus,s.bonus]);if(s.allow)r.push([l.allow,s.allow]);}
+  if(s.unpaidAmt)r.push([l.unpaid+" ("+s.unpaidDays+")",-s.unpaidAmt]);return r;}
+function dedRows(s){var l=L(),r=[[l.epf,s.epfEe],[l.socso,s.socsoEe]];if(s.skbbkEe)r.push([l.skbbk,s.skbbkEe]);r.push([l.eis,s.eisEe],[l.pcb,s.pcb]);
+  if(s.dedItems)Object.keys(s.dedItems).forEach(function(k){r.push([itemName(k),s.dedItems[k]]);});
+  else{if(s.adv)r.push([l.adv,s.adv]);if(s.other)r.push([l.other,s.other]);}return r;}
+
+/* ---------- icons ---------- */
+var IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+leave:'<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
+claim:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+pay:'<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.8"/><path d="M6 9.5v5M18 9.5v5"/>',
+me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.3-6.5 8-6.5s7 2 8 6.5"/>'};
+function ico(k,s){return '<svg width="'+(s||22)+'" height="'+(s||22)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[k]+'</svg>';}
+
+/* ---------- render ---------- */
+var app=document.getElementById("app");
+function langBtns(){return '<div class="lang" role="group" aria-label="Language"><button data-lang="ms" aria-pressed="'+(S.lang==="ms")+'">BM</button><button data-lang="en" aria-pressed="'+(S.lang==="en")+'">EN</button></div>';}
+function render(){
+  document.documentElement.lang=S.lang;
+  if(S.view==="loading"){app.innerHTML='<div class="loading">IMAASH HR…</div>';return;}
+  if(S.view==="auth"||S.view==="recover"||S.view==="nostaff"){app.innerHTML=vAuth();return;}
+  var l=L(),e=S.D.emp,h=new Date().getHours(),gi=h<12?0:h<15?1:h<19?2:3;
+  var pend=S.D.leave.filter(function(x){return x.status==="pending";}).length+S.D.claim.filter(function(x){return x.status==="pending";}).length;
+  app.innerHTML='<header class="hdr"><div class="row"><div><div class="co">'+esc(meta().company||"")+'</div><h1>'+(S.tab==="home"?l.hello[gi]+', '+esc(e.nick||String(e.name).split(" ")[0]):l[S.tab==="pay"?"pay":S.tab])+'</h1></div><div class="sp"></div>'+langBtns()+'</div></header>'+
+   '<main>'+({home:vHome,leave:vLeave,claim:vClaim,pay:vPay,me:vMe}[S.tab])()+'</main>'+
+   '<nav class="tabs" aria-label="Menu"><div class="in">'+["home","leave","claim","pay","me"].map(function(k){return '<button data-tab="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+ico(k)+'<span>'+l[k]+'</span>'+((k==="leave"||k==="claim")&&countPend(k)?'<span class="dot">'+countPend(k)+'</span>':'')+'</button>';}).join("")+'</div></nav>';}
+function countPend(k){return S.D[k].filter(function(x){return x.status==="pending";}).length;}
+
+function vAuth(){
+  var l=L(),body;
+  if(S.view==="nostaff")body='<p>'+l.notStaff+'</p><button class="btn" data-act="signout">'+l.signOut+'</button>';
+  else if(S.view==="recover")body='<h2>'+l.newPw+'</h2><div class="f"><label for="a-np">'+l.pw2+'</label><input id="a-np" type="password" autocomplete="new-password"></div><div class="'+(S.msgOk?"ok":"err")+'" id="a-msg">'+esc(S.msg)+'</div><button class="btn pri" data-act="savepw">'+l.savePw+'</button>';
+  else{var up=S.authMode==="up";
+    body='<h2>'+(up?l.signUp:l.signIn)+'</h2><p class="sub">'+l.authP+'</p>'+
+    '<div class="f"><label for="a-em">'+l.email+'</label><input id="a-em" type="email" autocomplete="username" inputmode="email"></div>'+
+    '<div class="f"><label for="a-pw">'+(up?l.pw2:l.pw)+'</label><input id="a-pw" type="password" autocomplete="'+(up?"new-password":"current-password")+'"></div>'+
+    '<div class="'+(S.msgOk?"ok":"err")+'" id="a-msg">'+esc(S.msg)+'</div>'+
+    '<button class="btn pri" data-act="'+(up?"signup":"signin")+'">'+(up?l.signUp:l.signIn)+'</button>'+
+    '<button class="btn ghost" data-act="mode">'+(up?l.haveAcc:l.noAcc)+'</button>'+(up?'':'<button class="btn ghost" data-act="forgot">'+l.forgot+'</button>');}
+  return '<div class="auth"><header class="hdr"><div class="row"><div><div class="co">IMAASH Bersatu Enterprise</div><h1>IMAASH HR</h1></div><div class="sp"></div>'+langBtns()+'</div></header><main><section class="card">'+body+'</section><p class="sub" style="text-align:center">'+l.install+'</p></main></div>';}
+
+function balCards(){var l=L(),yr=today().slice(0,4);
+  return '<div class="bal">'+types().filter(function(x){return x.paid&&(["AL","MC","HL"].indexOf(x.id)>=0||taken(x.id,yr)>0);}).map(function(x){var en=entitle(x.id),u=taken(x.id,yr);
+    return '<div class="bx"><span>'+esc(x[S.lang])+'</span><b class="num">'+(en-u)+'</b><i>'+l.of+' '+en+' '+l.days+'</i><div class="meter"><i style="width:'+Math.min(100,en?u/en*100:0)+'%"></i></div></div>';}).join("")+'</div>';}
+function reqItem(x,k){var l=L();
+  var t=k==="leave"?esc(ltype(x.type)[S.lang]):esc(l.ctypes[x.type]||x.type);
+  var s=k==="leave"?dfmt(x.from)+(x.to!==x.from?' \u2013 '+dfmt(x.to):'')+' \u00b7 '+x.days+' '+l.days+(x.reason?' \u00b7 '+esc(x.reason):''):dfmt(x.date)+(x.desc?' \u00b7 '+esc(x.desc):'');
+  return '<div class="li"><div class="grow"><div class="t">'+t+'</div><div class="s">'+s+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+(k==="claim"?'<span class="amt num">'+rm(x.amount)+'</span>':'')+pill(x.status)+(x.status==="pending"?'<button class="btn sm" data-act="cancel" data-k="'+k+'" data-id="'+esc(x.id)+'">'+l.withdraw+'</button>':'')+'</div></div>';}
+function reqRows(items,k){if(!items.length)return '<div class="empty">'+L().none+'</div>';return '<div class="list">'+items.map(function(x){return reqItem(x,k);}).join("")+'</div>';}
+
+function vHome(){var l=L(),yr=today().slice(0,4),p=S.D.pay[0];
+  var reqs=S.D.leave.map(function(x){return {k:"leave",o:x,d:x.applied||x.from};}).concat(S.D.claim.map(function(x){return {k:"claim",o:x,d:x.date};})).filter(function(x){return x.o.status==="pending";});
+  return '<section class="card lift"><h2>'+fmt(l.balance,{y:yr})+'<button class="btn ghost" data-tab="leave">'+l.seeAll+'</button></h2>'+balCards()+'</section>'+
+  '<div class="grid2"><button class="qa" data-act="newLeave"><span class="ic">'+ico("leave")+'</span><b>'+l.applyLeave+'</b></button><button class="qa" data-act="newClaim"><span class="ic">'+ico("claim")+'</span><b>'+l.newClaim+'</b></button></div>'+
+  (p?'<section class="card"><h2>'+l.latestSlip+'<button class="btn ghost" data-tab="pay">'+l.seeAll+'</button></h2><button class="li" style="border:0;background:none;padding:0;text-align:left;cursor:pointer" data-act="slip" data-id="'+p.id+'"><span class="grow"><span class="t" style="display:block">'+mlabel(p.id)+'</span><span class="s">'+l.net+'</span></span><span class="amt num" style="font-size:20px;color:var(--accent)">'+rm(p.slip.net)+'</span></button></section>':'')+
+  (reqs.length?'<section class="card"><h2>'+l.myReq+'</h2><div class="list">'+reqs.map(function(r){return reqItem(r.o,r.k);}).join("")+'</div></section>':'');}
+
+function vLeave(){var l=L(),f=S.lf,yr=today().slice(0,4);
+  var rows=S.D.leave.filter(function(x){return f==="all"||x.status===f;});
+  return '<section class="card lift"><h2>'+fmt(l.balance,{y:yr})+'</h2>'+balCards()+'<button class="btn pri" data-act="newLeave">+ '+l.applyLeave+'</button></section>'+
+  '<div class="seg">'+["all","pending","approved","rejected"].map(function(k){return '<button data-lf="'+k+'" aria-pressed="'+(f===k)+'">'+l[k]+'</button>';}).join("")+'</div>'+
+  '<section class="card">'+reqRows(rows,"leave")+'</section>';}
+
+function vClaim(){var l=L();
+  return '<section class="card lift"><button class="btn pri" data-act="newClaim">+ '+l.newClaim+'</button></section><section class="card">'+reqRows(S.D.claim,"claim")+'</section>';}
+
+function vPay(){var l=L(),yrs=[];S.D.pay.forEach(function(p){var y=p.id.slice(0,4);if(yrs.indexOf(y)<0)yrs.push(y);});
+  if(!yrs.length)return '<section class="card lift"><div class="empty">'+l.none+'</div></section>';
+  var y=S.py&&yrs.indexOf(S.py)>=0?S.py:yrs[0],rows=S.D.pay.filter(function(p){return p.id.slice(0,4)===y;});
+  var tot=rows.reduce(function(a,p){return a+N(p.slip.net);},0);
+  return '<section class="card lift"><div class="seg">'+yrs.map(function(o){return '<button data-py="'+o+'" aria-pressed="'+(o===y)+'">'+o+'</button>';}).join("")+'</div><div class="sub">'+l.net+' '+y+': <b class="num" style="color:var(--ink)">'+rm(tot)+'</b></div></section>'+
+  '<section class="card"><div class="list">'+rows.map(function(p){return '<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;text-align:left;cursor:pointer;width:100%" data-act="slip" data-id="'+p.id+'"><span class="grow"><span class="t" style="display:block">'+mlabel(p.id)+'</span><span class="s">'+l.gross+' '+rm(p.slip.gross)+'</span></span><span class="amt num">'+rm(p.slip.net)+'</span></button>';}).join("")+'</div></section>';}
+
+function vMe(){var l=L(),e=S.D.emp;
+  function row(a,b){return b?'<div><span class="sub">'+a+'</span><span>'+esc(b)+'</span></div>':'';}
+  return '<section class="card lift"><div class="kv">'+row(l.name,e.name)+row(l.no,e.no)+row(l.pos,e.position)+row(l.joined,dfmt(e.joined))+row(l.ic,e.ic)+row(l.email,e.email)+row(l.phone,e.phone)+row(l.address,e.address)+'</div></section>'+
+  '<section class="card"><div class="kv">'+row(l.bank,e.bank)+row(l.acct,e.acct)+row(l.epfNo,e.epfNo)+row(l.socsoNo,e.socsoNo)+'</div><p class="sub">'+l.profNote+'</p></section>'+
+  '<button class="btn" data-act="refresh">'+l.refresh+'</button><button class="btn" data-act="signout">'+l.signOut+'</button>';}
+
+/* ---------- sheets ---------- */
+var sheet=null;
+function openSheet(title,body){closeSheet();sheet=document.createElement("div");sheet.className="sheet";sheet.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="hd"><h3>'+esc(title)+'</h3><button class="x" data-act="close" aria-label="'+L().close+'">×</button></div>'+body+'</div>';
+  sheet.addEventListener("click",function(ev){if(ev.target===sheet)closeSheet();});document.body.appendChild(sheet);document.body.style.overflow="hidden";}
+function closeSheet(){if(sheet){sheet.remove();sheet=null;document.body.style.overflow="";}}
+function sLeave(){var l=L();
+  openSheet(l.applyLeave,
+   '<div class="f"><label for="l-type">'+l.type+'</label><select id="l-type">'+types().map(function(x){return '<option value="'+x.id+'">'+esc(x[S.lang])+'</option>';}).join("")+'</select></div>'+
+   '<div class="frow"><div class="f"><label for="l-from">'+l.from+'</label><input id="l-from" type="date" value="'+today()+'"></div><div class="f"><label for="l-to">'+l.to+'</label><input id="l-to" type="date" value="'+today()+'"></div></div>'+
+   '<label class="chk"><input type="checkbox" id="l-half"> '+l.half+'</label>'+
+   '<div class="f"><label for="l-reason">'+l.reason+'</label><textarea id="l-reason" maxlength="500"></textarea></div>'+
+   '<div class="info" id="l-info"></div><div class="err" id="s-err"></div>'+
+   '<button class="btn pri" data-act="sendLeave">'+l.submit+'</button>');
+  leaveInfo();}
+function leaveInfo(){var el=document.getElementById("l-info");if(!el)return;var l=L(),tp=val("l-type"),f=val("l-from"),to=val("l-to"),n=workDays(f,to,document.getElementById("l-half").checked),lt=ltype(tp),yr=(f||today()).slice(0,4);
+  var en=entitle(tp),u=taken(tp,yr),pe=taken(tp,yr,"pending");
+  el.innerHTML='<b>'+fmt(l.workDays,{n:n})+'</b> · '+(lt.paid?(en-u)+' '+l.left+' ('+l.of+' '+en+')'+(pe?' · '+pe+' '+l.pending.toLowerCase():''):l.unlimited);}
+function sClaim(){var l=L();
+  openSheet(l.newClaim,
+   '<div class="f"><label for="c-type">'+l.type+'</label><select id="c-type">'+Object.keys(l.ctypes).map(function(k){return '<option value="'+k+'">'+esc(l.ctypes[k])+'</option>';}).join("")+'</select></div>'+
+   '<div class="frow"><div class="f"><label for="c-date">'+l.date+'</label><input id="c-date" type="date" value="'+today()+'" max="'+today()+'"></div><div class="f"><label for="c-amt">'+l.amt+'</label><input id="c-amt" type="number" inputmode="decimal" min="0" step="0.01"></div></div>'+
+   '<div class="f"><label for="c-desc">'+l.desc+'</label><textarea id="c-desc" maxlength="500"></textarea></div>'+
+   '<div class="err" id="s-err"></div><button class="btn pri" data-act="sendClaim">'+l.submit+'</button>');}
+function sSlip(id){var l=L(),p=S.D.pay.find(function(x){return x.id===id;});if(!p)return;var s=slipNorm(p.slip),e=S.D.emp;
+  function row(a,b,c){return '<div'+(c?' class="'+c+'"':'')+'><span>'+esc(a)+'</span><span class="num">'+b+'</span></div>';}
+  function m(n){return n<0?'−'+rm(-n):rm(n);}
+  openSheet(l.payslips+' · '+mlabel(id),
+   '<div class="kv"><div class="sec">'+l.earn+'</div>'+earnRows(s).map(function(r){return row(r[0],m(r[1]));}).join("")+row(l.gross,rm(s.gross),"tot")+(s.claims?row(l.claims+' (+)',rm(s.claims)):'')+'</div>'+
+   '<div class="kv"><div class="sec">'+l.deduct+'</div>'+dedRows(s).map(function(r){return row(r[0],rm(r[1]));}).join("")+row(l.ded,rm(s.ded),"tot")+'</div>'+
+   '<div class="netbox"><b style="font-size:15px;color:var(--ink)">'+l.net+'</b><b class="num">'+rm(s.net)+'</b></div>'+
+   '<div class="kv"><div class="sec">'+l.empContrib+'</div>'+row(l.epf,rm(s.epfEr))+row(l.socso,rm(s.socsoEr))+row(l.eis,rm(s.eisEr))+'</div>'+
+   '<button class="btn pri" data-act="pdf" data-id="'+id+'">'+l.pdf+'</button>');}
+
+function slipPdf(id){
+  var l=L(),p=S.D.pay.find(function(x){return x.id===id;}),s=slipNorm(p.slip),e=S.D.emp,M=meta();
+  if(!window.jspdf){toast("PDF");return;}
+  var doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),y=18,X=16,W=178;
+  function money(n){return (n<0?"-":"")+"RM "+Math.abs(N(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+  doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text(String(M.company||""),X,y);
+  doc.setFontSize(13);doc.setTextColor(179,20,30);doc.text(l.payslips.toUpperCase().replace(/S$/,""),X+W,y,{align:"right"});doc.setTextColor(0);
+  y+=6;doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text([(M.regNo||""),String(M.address||"").replace(/\n/g,", ")].filter(Boolean).join("  |  "),X,y);doc.text(mlabel(id),X+W,y,{align:"right"});
+  y+=4;doc.setDrawColor(179,20,30);doc.setLineWidth(.8);doc.line(X,y,X+W,y);y+=8;doc.setFontSize(10);
+  var lk=[[l.name,e.name],[l.no,e.no],[l.pos,e.position||"-"],[l.ic,e.ic||"-"]],rk=[[l.epfNo,e.epfNo||"-"],[l.socsoNo,e.socsoNo||"-"],[l.bank,e.bank||"-"],[l.acct,e.acct||"-"]];
+  for(var i=0;i<4;i++){doc.setTextColor(100);doc.text(lk[i][0],X,y);doc.text(rk[i][0],X+95,y);doc.setTextColor(0);doc.text(String(lk[i][1]||"-"),X+40,y);doc.text(String(rk[i][1]||"-"),X+135,y);y+=6;}
+  y+=4;
+  function col(x,title,rows,tot){var yy=y;doc.setFont("helvetica","bold");doc.setTextColor(179,20,30);doc.text(title.toUpperCase(),x,yy);doc.setTextColor(0);yy+=2;doc.setDrawColor(220);doc.setLineWidth(.3);doc.line(x,yy,x+84,yy);yy+=6;doc.setFont("helvetica","normal");
+    rows.forEach(function(r){doc.text(String(r[0]),x,yy);doc.text(money(r[1]),x+84,yy,{align:"right"});yy+=6;});doc.line(x,yy-3,x+84,yy-3);doc.setFont("helvetica","bold");doc.text(tot[0],x,yy+2);doc.text(money(tot[1]),x+84,yy+2,{align:"right"});doc.setFont("helvetica","normal");return yy+8;}
+  var y1=col(X,l.earn,earnRows(s),[l.gross,s.gross]),y2=col(X+94,l.deduct,dedRows(s),[l.ded,s.ded]);y=Math.max(y1,y2);
+  if(s.claims){doc.text(l.claims+" (+)",X,y);doc.text(money(s.claims),X+84,y,{align:"right"});y+=8;}
+  doc.setFillColor(251,231,232);doc.rect(X,y,W,14,"F");doc.setFont("helvetica","bold");doc.setFontSize(12);doc.text(l.net,X+4,y+9);doc.setTextColor(179,20,30);doc.setFontSize(15);doc.text(money(s.net),X+W-4,y+9.5,{align:"right"});doc.setTextColor(0);y+=24;
+  doc.setFontSize(10);doc.setFont("helvetica","bold");doc.text(l.empContrib.toUpperCase(),X,y);y+=7;doc.setFont("helvetica","normal");
+  [[l.epf,s.epfEr],[l.socso,s.socsoEr],[l.eis,s.eisEr]].forEach(function(r){doc.text(r[0],X,y);doc.text(money(r[1]),X+84,y,{align:"right"});y+=6;});
+  y+=10;doc.setFontSize(8);doc.setTextColor(120);doc.text(l.slipNote,X,y);
+  doc.save("Slip-Gaji-"+String(e.name).replace(/\s+/g,"-")+"-"+id+".pdf");}
+
+/* ---------- backend ---------- */
+function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+function errMsg(e){var m=(e&&e.message)||String(e),l=L();if(/fetch|network|Failed/i.test(m))return l.net0;if(/invalid login/i.test(m))return l.wrongPw;if(/not confirmed/i.test(m))return l.notConf;return m;}
+function setMsg(m,ok){S.msg=m;S.msgOk=!!ok;var el=document.getElementById("a-msg")||document.getElementById("s-err");if(el){el.textContent=m;el.className=ok?"ok":"err";}}
+async function load(){
+  var r=await cli.rpc("hr_staff_data");
+  if(r.error)throw r.error;
+  if(!r.data||r.data.error){S.view="nostaff";render();return;}
+  S.D=r.data;["leave","claim","pay"].forEach(function(k){S.D[k]=S.D[k]||[];});S.view="app";render();}
+async function boot(){
+  if(!window.supabase){app.innerHTML='<div class="loading">'+L().net0+'</div>';return;}
+  cli=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"imaash-hr-staff"}});
+  cli.auth.onAuthStateChange(function(ev){if(ev==="PASSWORD_RECOVERY"){S.view="recover";S.msg="";render();}});
+  try{var s=await cli.auth.getSession();
+    if(/type=recovery/.test(location.hash)){S.view="recover";render();return;}
+    if(s.data&&s.data.session){await load();return;}}catch(e){}
+  S.view="auth";render();}
+
+document.addEventListener("click",async function(ev){
+  var b=ev.target.closest("[data-tab],[data-act],[data-lang],[data-lf],[data-py]");if(!b)return;
+  var d=b.dataset,l=L();
+  if(d.lang){S.lang=d.lang;try{localStorage.setItem("hrs-ui",JSON.stringify({lang:S.lang}));}catch(e){}render();return;}
+  if(d.tab){S.tab=d.tab;closeSheet();render();window.scrollTo(0,0);return;}
+  if(d.lf){S.lf=d.lf;render();return;}
+  if(d.py){S.py=d.py;render();return;}
+  var a=d.act;
+  if(a==="close")return closeSheet();
+  if(a==="mode"){S.authMode=S.authMode==="in"?"up":"in";S.msg="";render();return;}
+  if(a==="signin"||a==="signup"){
+    var em=val("a-em"),pw=document.getElementById("a-pw").value;if(!em||!pw)return setMsg(l.req);
+    if(a==="signup"&&pw.length<8)return setMsg(l.pw2);
+    b.disabled=true;setMsg("…",true);
+    try{
+      var here=location.origin+location.pathname;
+      var r=a==="signup"?await cli.auth.signUp({email:em,password:pw,options:{emailRedirectTo:here}}):await cli.auth.signInWithPassword({email:em,password:pw});
+      if(r.error)throw r.error;
+      if(r.data&&r.data.session){S.msg="";await load();}
+      else{S.authMode="in";S.msg=l.checkMail;S.msgOk=true;render();}
+    }catch(e){b.disabled=false;setMsg(errMsg(e));}
+    return;}
+  if(a==="forgot"){var em2=val("a-em");if(!em2)return setMsg(l.email+"?");
+    try{var r2=await cli.auth.resetPasswordForEmail(em2,{redirectTo:location.origin+location.pathname});if(r2.error)throw r2.error;setMsg(l.resetSent,true);}catch(e){setMsg(errMsg(e));}return;}
+  if(a==="savepw"){var np=document.getElementById("a-np").value;if(np.length<8)return setMsg(l.pw2);
+    try{var r3=await cli.auth.updateUser({password:np});if(r3.error)throw r3.error;history.replaceState(null,"",location.pathname);toast(l.pwSaved);S.msg="";await load();}catch(e){setMsg(errMsg(e));}return;}
+  if(a==="signout"){await cli.auth.signOut();S.D=null;S.view="auth";S.authMode="in";S.msg="";S.tab="home";render();return;}
+  if(a==="refresh"){try{await load();toast("✓");}catch(e){toast(errMsg(e));}return;}
+  if(a==="newLeave")return sLeave();
+  if(a==="newClaim")return sClaim();
+  if(a==="slip")return sSlip(d.id);
+  if(a==="pdf")return slipPdf(d.id);
+  if(a==="sendLeave"){
+    var tp=val("l-type"),f=val("l-from"),to=val("l-to"),half=document.getElementById("l-half").checked,n=workDays(f,to,half),lt=ltype(tp);
+    if(!tp||!f||!to||to<f)return setMsg(l.req);
+    if(!n)return setMsg(l.badDays);
+    if(lt.paid){var bal=entitle(tp)-taken(tp,f.slice(0,4))-taken(tp,f.slice(0,4),"pending");if(n>bal)return setMsg(fmt(l.overBal,{n:bal}));}
+    b.disabled=true;
+    try{var r4=await cli.rpc("hr_staff_apply_leave",{p_type:tp,p_from:f,p_to:to,p_half:half,p_days:n,p_reason:val("l-reason")});if(r4.error)throw r4.error;closeSheet();toast(l.sent);await load();}
+    catch(e){b.disabled=false;setMsg(errMsg(e));}
+    return;}
+  if(a==="sendClaim"){
+    var ct=val("c-type"),cd=val("c-date"),ca=Number(val("c-amt"));
+    if(!ct||!cd||!(ca>0))return setMsg(l.req);
+    b.disabled=true;
+    try{var r5=await cli.rpc("hr_staff_submit_claim",{p_type:ct,p_date:cd,p_amount:ca,p_desc:val("c-desc")});if(r5.error)throw r5.error;closeSheet();toast(l.sent);if(S.tab!=="claim"){S.tab="claim";}await load();}
+    catch(e){b.disabled=false;setMsg(errMsg(e));}
+    return;}
+  if(a==="cancel"){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent=l.tapAgain;setTimeout(function(){if(b.isConnected){b.dataset.armed="";b.textContent=l.withdraw;}},3000);return;}
+    try{var r6=await cli.rpc("hr_staff_cancel",{p_coll:d.k,p_id:d.id});if(r6.error)throw r6.error;toast(l.withdrawn);await load();}catch(e){toast(errMsg(e));}
+    return;}
+});
+document.addEventListener("change",function(ev){if(/^l-(type|from|to|half)$/.test(ev.target.id)){if(ev.target.id==="l-from"){var t=document.getElementById("l-to");if(t.value<ev.target.value)t.value=ev.target.value;}leaveInfo();}});
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape")closeSheet();if(ev.key==="Enter"&&(ev.target.id==="a-pw"||ev.target.id==="a-np")){var bt=document.querySelector('[data-act="signin"],[data-act="signup"],[data-act="savepw"]');if(bt)bt.click();}});
+boot();
+</script>
+</body>
+</html>
