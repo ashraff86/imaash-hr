@@ -261,7 +261,7 @@ function vHome(){var l=L(),yr=today().slice(0,4),p=S.D.pay[0];
   return '<section class="card lift"><h2>'+fmt(l.balance,{y:yr})+'<button class="btn ghost" data-tab="leave">'+l.seeAll+'</button></h2>'+balCards()+'</section>'+
   '<div class="grid2"><button class="qa" data-act="newLeave"><span class="ic">'+ico("leave")+'</span><b>'+l.applyLeave+'</b></button><button class="qa" data-act="newClaim"><span class="ic">'+ico("claim")+'</span><b>'+l.newClaim+'</b></button></div>'+
   (p?'<section class="card"><h2>'+l.latestSlip+'<button class="btn ghost" data-tab="pay">'+l.seeAll+'</button></h2><button class="li" style="border:0;background:none;padding:0;text-align:left;cursor:pointer" data-act="slip" data-id="'+p.id+'"><span class="grow"><span class="t" style="display:block">'+mlabel(p.id)+'</span><span class="s">'+l.net+'</span></span><span class="amt num" style="font-size:20px;color:var(--accent)">'+rm(p.slip.net)+'</span></button></section>':'')+
-  (reqs.length?'<section class="card"><h2>'+l.myReq+'</h2><div class="list">'+reqs.map(function(r){return reqItem(r.o,r.k);}).join("")+'</div></section>':'');}
+  (reqs.length?'<section class="card"><h2>'+l.myReq+'</h2><div class="list">'+reqs.map(function(r){return reqItem(r.o,r.k);}).join("")+'</div></section>':'')+appLink();}
 
 function vLeave(){var l=L(),f=S.lf,yr=today().slice(0,4);
   var rows=S.D.leave.filter(function(x){return f==="all"||x.status===f;});
