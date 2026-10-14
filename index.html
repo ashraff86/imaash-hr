@@ -286,8 +286,8 @@ function vMe(){var l=L(),e=S.D.emp;
   appLink()+'<button class="btn" data-act="refresh">'+l.refresh+'</button><button class="btn" data-act="signout">'+l.signOut+'</button>';}
 // Offer the Android app on Android phones, except when already running inside it.
 function inApp(){try{return document.referrer.indexOf("android-app://")===0||matchMedia("(display-mode: standalone)").matches||sessionStorage.getItem("hr-in-app")==="1";}catch(e){return false;}}
-function appLink(){if(!/Android/i.test(navigator.userAgent)||inApp())return "";var ms=S.lang==="ms";
-  return '<a class="btn" href="/download/IMAASH-HR.apk" download style="display:block;text-align:center;text-decoration:none;margin:12px 0">⬇ '+(ms?"Muat turun aplikasi Android":"Download the Android app")+'</a>';}
+function appLink(){if(inApp())return "";var ms=S.lang==="ms";
+  return '<a class="btn" href="/download/IMAASH-HR.apk" download style="display:block;text-align:center;text-decoration:none;margin:12px 0">⬇ '+(ms?"Muat turun aplikasi Android":"Download the Android app")+'</a>'+(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'<p class="sub" style="text-align:center;margin:-4px 0 12px">'+(ms?"iPhone: tekan Kongsi kemudian \"Tambah ke Skrin Utama\".":"iPhone: tap Share, then \"Add to Home Screen\".")+'</p>':'');}
 try{if(document.referrer.indexOf("android-app://")===0)sessionStorage.setItem("hr-in-app","1");}catch(e){}
 if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});
 
